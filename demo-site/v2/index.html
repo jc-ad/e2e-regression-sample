@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>小铺 · 演示站 v2（UI 重构后）</title>
+<style>
+  :root { --ink: #172033; --line: #d8deea; --brand: #155e63; }
+  body { font-family: Georgia, "Songti SC", serif; margin: 0; padding: 40px 16px; background: #eef2f1; color: var(--ink); }
+  .shell { max-width: 620px; margin: 0 auto; display: grid; gap: 18px; }
+  .card { background: #fff; border: 1px solid var(--line); box-shadow: 0 2px 0 #dfe6e4; padding: 22px 26px; }
+  .card__head { display: flex; justify-content: space-between; align-items: center; gap: 16px; border-bottom: 1px solid var(--line); padding-bottom: 12px; }
+  .card__heading { font-size: 22px; font-weight: 600; margin: 0; letter-spacing: 1px; }
+  .card__hint { color: #5c6a7a; font-size: 13px; margin: 6px 0 0; }
+  .toolbar { display: flex; gap: 8px; }
+  .field-group { border: 0; margin: 0; padding: 0; display: grid; gap: 12px; }
+  .field { display: grid; gap: 4px; }
+  .field__input { padding: 9px 10px; border: 1px solid var(--line); background: #fafcfb; font: inherit; }
+  .card__actions { margin-top: 16px; display: flex; justify-content: flex-end; }
+  .action { font: inherit; padding: 9px 16px; border: 1px solid var(--brand); background: var(--brand); color: #fff; cursor: pointer; }
+  .action--ghost { background: transparent; color: var(--brand); }
+  .action__icon { margin-right: 6px; }
+  .alert { color: #a4262c; border-left: 3px solid #a4262c; padding-left: 10px; margin: 12px 0 0; }
+  .product-list { display: grid; gap: 10px; margin-top: 14px; }
+  .product { display: flex; justify-content: space-between; align-items: center; border: 1px dashed var(--line); padding: 12px 14px; }
+  .product > h2 { font-size: 15px; font-weight: 400; margin: 0; }
+  .summary { margin: 14px 0; color: #46536a; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<main class="shell">
+
+  <!-- 登录：改成语义化 form / fieldset，去掉全部 id，用包裹式 label -->
+  <section class="card card--auth" data-page="login">
+    <header>
+      <h1 class="card__heading">登录</h1>
+      <p class="card__hint">演示账号 demo / 123456</p>
+    </header>
+    <form class="auth-form" autocomplete="off">
+      <fieldset class="field-group">
+        <label class="field"><span class="field__label">用户名</span><input class="field__input" type="text" name="u"></label>
+        <label class="field"><span class="field__label">密码</span><input class="field__input" type="password" name="p"></label>
+      </fieldset>
+      <footer class="card__actions">
+        <button class="action action--primary" type="button" data-act="login"><i class="action__icon" aria-hidden="true"></i>登录</button>
+      </footer>
+    </form>
+    <p class="alert" data-el="error" hidden>账号或密码不对</p>
+  </section>
+
+  <!-- 商品页：div 换成 section/article/nav，按钮挪进工具栏并加了装饰层 -->
+  <section class="card" data-page="shop" hidden>
+    <header class="card__head">
+      <h1 class="card__heading">商品列表</h1>
+      <nav class="toolbar">
+        <button class="action action--ghost" type="button" data-act="cart"><i aria-hidden="true"></i>购物车 0</button>
+        <button class="action action--ghost" type="button" data-act="menu">菜单</button>
+        <button class="action action--ghost" type="button" data-act="logout" hidden>退出登录</button>
+      </nav>
+    </header>
+    <div class="product-list">
+      <article class="product"><h2>手工皂 · 原味</h2><button class="action" type="button" data-act="add">加入购物车</button></article>
+      <article class="product"><h2>手工皂 · 柑橘</h2><button class="action" type="button" data-act="add">加入购物车</button></article>
+    </div>
+  </section>
+
+  <section class="card" data-page="cart" hidden>
+    <header><h1 class="card__heading">购物车</h1></header>
+    <p class="summary" data-el="cartInfo">共 0 件</p>
+    <footer class="card__actions"><button class="action" type="button" data-act="checkout">去结算</button></footer>
+  </section>
+
+  <section class="card" data-page="checkout" hidden>
+    <header><h1 class="card__heading">填写收货信息</h1></header>
+    <form class="field-group" autocomplete="off">
+      <label class="field"><span class="field__label">收件人</span><input class="field__input" type="text" name="fn"></label>
+      <label class="field"><span class="field__label">电话</span><input class="field__input" type="text" name="tel"></label>
+      <label class="field"><span class="field__label">地址</span><input class="field__input" type="text" name="addr"></label>
+      <footer class="card__actions"><button class="action" type="button" data-act="submit">提交订单</button></footer>
+    </form>
+  </section>
+
+  <section class="card" data-page="done" hidden>
+    <header><h1 class="card__heading">下单成功</h1></header>
+    <p class="card__hint">我们会尽快发货。</p>
+  </section>
+
+</main>
+<script>
+  // 站点内部改用 data-* 驱动，class 与层级全部换过；页面用例看不到这些实现细节。
+  const q = (sel) => document.querySelector(sel);
+  const qa = (sel) => Array.from(document.querySelectorAll(sel));
+  const pages = qa('[data-page]');
+  const show = (name) => pages.forEach((p) => { p.hidden = p.dataset.page !== name; });
+  const u = q('input[name="u"]');
+  const p = q('input[name="p"]');
+  const err = q('[data-el="error"]');
+  const cartBtn = q('[data-act="cart"]');
+  const logoutBtn = q('[data-act="logout"]');
+  let cart = 0;
+
+  q('[data-act="login"]').onclick = () => {
+    if (u.value === 'demo' && p.value === '123456') {
+      err.hidden = true;
+      show('shop');
+    } else {
+      err.hidden = false;
+    }
+  };
+  qa('[data-act="add"]').forEach((b) => {
+    b.onclick = () => { cart += 1; cartBtn.innerHTML = '<i aria-hidden="true"></i>购物车 ' + cart; };
+  });
+  cartBtn.onclick = () => { q('[data-el="cartInfo"]').textContent = '共 ' + cart + ' 件'; show('cart'); };
+  q('[data-act="menu"]').onclick = () => { logoutBtn.hidden = !logoutBtn.hidden; };
+  logoutBtn.onclick = () => {
+    cart = 0; cartBtn.innerHTML = '<i aria-hidden="true"></i>购物车 0';
+    u.value = ''; p.value = '';
+    show('login');
+  };
+  q('[data-act="checkout"]').onclick = () => show('checkout');
+  q('[data-act="submit"]').onclick = () => show('done');
+</script>
+</body>
+</html>
